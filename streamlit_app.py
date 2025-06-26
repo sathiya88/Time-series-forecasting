@@ -6,7 +6,7 @@ st.set_page_config(page_title="📈 Tesla Forecast Dashboard", layout="wide")
 st.title(" 🚗Tesla Stock Price 30 days Forecast Dashboard")
 
 # Load data
-data = pd.read_csv("lstm_forecast_30days(1).csv", parse_dates=["Date"])
+data = pd.read_csv("lstm_forecast_30days.csv", parse_dates=["Date"])
 data.set_index("Date", inplace=True)
 data['Price'] = pd.to_numeric(data['Price'], errors='coerce')
 data.dropna(subset=["Price"], how="all", inplace=True)
