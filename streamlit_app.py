@@ -3,7 +3,7 @@ import pandas as pd
 import altair as alt
 import os
 
-# 💠 Page config and CSS styling
+# 🔠 Page config and CSS styling
 st.set_page_config(page_title="📈 Tesla Forecast Dashboard", layout="wide")
 st.markdown("""
     <style>
@@ -66,7 +66,7 @@ start_date = pd.to_datetime(start_date)
 end_date = pd.to_datetime(end_date) + pd.Timedelta(days=1) - pd.Timedelta(microseconds=1)
 data = data.loc[start_date:end_date]
 
-# Select comparison models
+# Select comparison models using radio buttons
 comparison_mode = st.sidebar.radio("Compare Models", options=[
     "All Models", "Actual vs LSTM", "Actual vs ARIMA", "Actual vs BiLSTM", "Actual vs SARIMA", "Actual vs Prophet"])
 
