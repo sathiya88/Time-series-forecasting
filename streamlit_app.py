@@ -34,7 +34,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 🚗 Title
-st.title("🚗 Tesla Stock Price - 30 Days Forecast Comparison Dashboard")
+st.title(":red_car: Tesla Stock Price - 30 Days Forecast Comparison Dashboard")
 
 # Load forecast data
 def load_data(model_name):
@@ -59,8 +59,8 @@ data.dropna(subset=["Price"], inplace=True)
 data.set_index("Date", inplace=True)
 data.sort_index(inplace=True)
 
-# 🗓 Date Filter
-st.sidebar.header("🗓 Filter by Date")
+# 🗓️ Date Filter
+st.sidebar.header("🗓️ Filter by Date")
 min_date = data.index.min().date()
 max_date = data.index.max().date()
 start_date = st.sidebar.date_input("Start Date", min_value=min_date, max_value=max_date, value=min_date)
@@ -111,88 +111,99 @@ else:
 
 data_filtered = data_filtered[data_filtered["Model"].isin(models_to_show)]
 
-# 🎯 Forecast Value Inspector
-st.sidebar.header("🎯 Forecast Value Inspector")
-model_selected = st.sidebar.selectbox("Select Model", options=[m for m in model_list if m != "Actual"])
-forecast_only = data_filtered[data_filtered["Model"] == model_selected]["Price"].dropna()
+# 🌟 Forecast Value Inspector
+st.sidebar.header("🌟 Forecast Value Inspector")
+with st.sidebar.form("forecast_form"):
+    model_selected = st.selectbox("Select Model", options=[m for m in model_list if m != "Actual"])
+    forecast_only = data[data["Model"] == model_selected]["Price"].dropna()
 
-forecast_date = None
-selected_price = None
-if not forecast_only.empty:
-    forecast_date_input = st.sidebar.slider(
-        "Select Forecast Date",
-        min_value=forecast_only.index.min().date(),
-        max_value=forecast_only.index.max().date(),
-        value=forecast_only.index.min().date(),
-        format="YYYY-MM-DD"
-    )
-    forecast_date = pd.to_datetime(forecast_date_input)
-    if forecast_date in forecast_only.index:
-        selected_price = forecast_only.loc[forecast_date]
-        st.sidebar.write(f"{model_selected} Forecast on {forecast_date.date()}: **${selected_price:.2f}**")
+    forecast_date = None
+    selected_price = None
 
-# 📈 Altair Chart with unified tooltip
+    if not forecast_only.empty:
+        forecast_date_input = st.slider(
+            "Select Forecast Date",
+            min_value=forecast_only.index.min().date(),
+            max_value=forecast_only.index.max().date(),
+            value=forecast_only.index.min().date(),
+            format="YYYY-MM-DD"
+        )
+        submitted = st.form_submit_button("Submit")
 
-df_chart = data_filtered.reset_index().melt(
+        if submitted:
+            forecast_date = pd.to_datetime(forecast_date_input)
+            if forecast_date in forecast_only.index:
+                selected_price = forecast_only.loc[forecast_date]
+                st.sidebar.write(f"{model_selected} Forecast on {forecast_date.date()}: **${selected_price:.2f}**")
+                st.session_state.compare_mode = f"Actual_{model_selected}"
+                models_to_show = ["Actual", model_selected]
+                data_filtered = data[data["Model"].isin(models_to_show)]
+
+# 📊 Altair Chart
+chart_data = data_filtered.reset_index().melt(
     id_vars=["Date", "Model"],
     value_vars=["Price"],
     var_name="ValueType",
     value_name="Value"
 ).dropna(subset=["Value"])
 
-nearest = alt.selection(type="single", on="mouseover", fields=["Date"], nearest=True, empty="none")
+nearest = alt.selection(type='single', nearest=True, on='mouseover', fields=['Date'], empty='none')
 
-line_chart = alt.Chart(df_chart).mark_line(interpolate='monotone').encode(
-    x=alt.X("Date:T", title="Date"),
-    y=alt.Y("Value:Q", title="Price"),
-    color=alt.Color("Model:N", title="Model")
+line_chart = alt.Chart(chart_data).mark_line().encode(
+    x=alt.X('Date:T', title='Date'),
+    y=alt.Y('Value:Q', title='Price'),
+    color=alt.Color('Model:N', title='Model'),
+    tooltip=['Date:T', 'Model:N', alt.Tooltip('Value:Q', title='Price')]
 )
 
-selectors = alt.Chart(df_chart).mark_point(opacity=0).encode(
-    x="Date:T",
-    y="Value:Q",
+selectors = alt.Chart(chart_data).mark_point().encode(
+    x='Date:T',
+    opacity=alt.value(0),
 ).add_selection(nearest)
 
-tooltips = alt.Chart(df_chart).mark_rule().encode(
-    x="Date:T",
-    y="Value:Q",
-    tooltip=[
-        alt.Tooltip("Date:T", title="Date"),
-        alt.Tooltip("Value:Q", title="Price"),
-        alt.Tooltip("Model:N", title="Model")
-    ],
-    color=alt.Color("Model:N", legend=None)
+points = alt.Chart(chart_data).mark_circle(size=50).encode(
+    x='Date:T',
+    y='Value:Q',
+    color='Model:N'
 ).transform_filter(nearest)
 
-chart = (line_chart + selectors + tooltips).properties(
+text = alt.Chart(chart_data).mark_text(align='left', dx=5, dy=-5).encode(
+    x='Date:T',
+    y='Value:Q',
+    text=alt.Text('Value:Q', format=".2f"),
+    color='Model:N'
+).transform_filter(nearest)
+
+rules = alt.Chart(chart_data).mark_rule(color='gray').encode(
+    x='Date:T'
+).transform_filter(nearest)
+
+chart = (line_chart + selectors + points + rules + text).properties(
     width=900,
     height=500,
-    title="📈 Model Forecast Comparison (Hover to Inspect)",
+    title="📊 Model Forecast Comparison",
     background="#d0d3d4"
 ).interactive()
 
-# 🔴 Highlight selected forecast date
+# ⚫ Highlight selected forecast date
 if forecast_date and selected_price is not None:
     highlight_point = alt.Chart(pd.DataFrame({
         'Date': [forecast_date],
         'Value': [selected_price],
         'Model': [model_selected]
-    })).mark_circle(size=100, color='red').encode(
+    })).mark_circle(size=100).encode(
         x='Date:T',
         y='Value:Q',
-        tooltip=[
-            alt.Tooltip('Date:T', title='Date'),
-            alt.Tooltip('Value:Q', title='Forecast Price'),
-            alt.Tooltip('Model:N', title='Model')
-        ]
+        color=alt.Color('Model:N'),
+        tooltip=[alt.Tooltip('Date:T'), alt.Tooltip('Value:Q', title='Forecast Price')]
     )
     chart += highlight_point
 
 # Show chart
 st.altair_chart(chart, use_container_width=True)
 
-# 📋 Show Raw Data
-with st.expander("📋 Show Raw Data"):
+# 📋 Raw Data Table
+if st.checkbox("Show raw data"):
     st.markdown("<div class='dataframe-container'>", unsafe_allow_html=True)
     st.dataframe(data_filtered.sort_index())
     st.markdown("</div>", unsafe_allow_html=True)
