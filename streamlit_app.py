@@ -118,15 +118,6 @@ else:
 
 data_filtered = data_filtered[data_filtered["Model"].isin(models_to_show)]
 
-# 🧩 Model Container Display (instead of legend)
-with st.container():
-    st.markdown("""
-    <div class='model-container'>
-        <h3 style='color:#2e4053; font-size:26px;'>🧩 Models Displayed</h3>
-        <p style='font-size:20px; font-weight:bold;'>""" + ", ".join(models_to_show) + """</p>
-    </div>
-    """, unsafe_allow_html=True)
-
 # 🎯 Forecast Value Inspector
 st.sidebar.header("🎯 Forecast Value Inspector")
 model_selected = st.sidebar.selectbox("Select Model", options=[m for m in model_list if m != "Actual"])
@@ -209,8 +200,17 @@ if forecast_date and selected_price is not None:
 # Display chart
 st.altair_chart(chart, use_container_width=True)
 
-# 📋 Show Raw Data (white container)
+# 📋 Show Raw Data (white container with models shown)
 with st.expander("📋 Show Raw Data"):
     st.markdown("<div class='dataframe-container'>", unsafe_allow_html=True)
+
+    # 🧩 Models Displayed Section
+    st.markdown("""
+    <div class='model-container'>
+        <h3 style='color:#2e4053; font-size:26px;'>🧩 Models Displayed</h3>
+        <p style='font-size:20px; font-weight:bold;'>""" + ", ".join(models_to_show) + """</p>
+    </div>
+    """, unsafe_allow_html=True)
+
     st.dataframe(data_filtered.sort_index())
     st.markdown("</div>", unsafe_allow_html=True)
