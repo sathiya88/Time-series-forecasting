@@ -111,33 +111,29 @@ else:
 
 data_filtered = data_filtered[data_filtered["Model"].isin(models_to_show)]
 
-# 🌟 Forecast Value Inspector
+# 🌟 Forecast Value Inspector with Submit
 st.sidebar.header("🌟 Forecast Value Inspector")
 with st.sidebar.form("forecast_form"):
     model_selected = st.selectbox("Select Model", options=[m for m in model_list if m != "Actual"])
     forecast_only = data[data["Model"] == model_selected]["Price"].dropna()
 
-    forecast_date = None
-    selected_price = None
+    forecast_date_input = st.slider(
+        "Select Forecast Date",
+        min_value=forecast_only.index.min().date() if not forecast_only.empty else min_date,
+        max_value=forecast_only.index.max().date() if not forecast_only.empty else max_date,
+        value=forecast_only.index.min().date() if not forecast_only.empty else min_date,
+        format="YYYY-MM-DD"
+    )
+    submitted = st.form_submit_button("Submit")
 
-    if not forecast_only.empty:
-        forecast_date_input = st.slider(
-            "Select Forecast Date",
-            min_value=forecast_only.index.min().date(),
-            max_value=forecast_only.index.max().date(),
-            value=forecast_only.index.min().date(),
-            format="YYYY-MM-DD"
-        )
-        submitted = st.form_submit_button("Submit")
-
-        if submitted:
-            forecast_date = pd.to_datetime(forecast_date_input)
-            if forecast_date in forecast_only.index:
-                selected_price = forecast_only.loc[forecast_date]
-                st.sidebar.write(f"{model_selected} Forecast on {forecast_date.date()}: **${selected_price:.2f}**")
-                st.session_state.compare_mode = f"Actual_{model_selected}"
-                models_to_show = ["Actual", model_selected]
-                data_filtered = data[data["Model"].isin(models_to_show)]
+forecast_date = pd.to_datetime(forecast_date_input)
+selected_price = None
+if submitted and forecast_date in forecast_only.index:
+    selected_price = forecast_only.loc[forecast_date]
+    st.sidebar.write(f"\ud83d\udccc {model_selected} Forecast on {forecast_date.date()}: **${selected_price:.2f}**")
+    models_to_show = ["Actual", model_selected]
+    data_filtered = data[data["Model"].isin(models_to_show)]
+    data_filtered = data_filtered.loc[start_date:end_date]
 
 # 📊 Altair Chart
 chart_data = data_filtered.reset_index().melt(
@@ -185,17 +181,19 @@ chart = (line_chart + selectors + points + rules + text).properties(
     background="#d0d3d4"
 ).interactive()
 
-# ⚫ Highlight selected forecast date
-if forecast_date and selected_price is not None:
+# ⚫ Highlight forecast point if submitted
+if submitted and selected_price is not None:
     highlight_point = alt.Chart(pd.DataFrame({
         'Date': [forecast_date],
         'Value': [selected_price],
         'Model': [model_selected]
-    })).mark_circle(size=100).encode(
+    })).mark_circle(size=120, color='red').encode(
         x='Date:T',
         y='Value:Q',
-        color=alt.Color('Model:N'),
-        tooltip=[alt.Tooltip('Date:T'), alt.Tooltip('Value:Q', title='Forecast Price')]
+        tooltip=[
+            alt.Tooltip('Date:T', title='Forecast Date'),
+            alt.Tooltip('Value:Q', title='Forecast Price')
+        ]
     )
     chart += highlight_point
 
