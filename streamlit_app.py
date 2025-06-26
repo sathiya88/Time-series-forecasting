@@ -8,7 +8,7 @@ st.set_page_config(page_title="📈 Tesla Forecast Dashboard", layout="wide")
 st.markdown("""
     <style>
     body {
-        background-color: #007BFF;
+        background-color: #34495e;
     }
     .main > div {
         background-color: #ffffff;
