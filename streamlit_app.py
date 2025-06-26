@@ -16,14 +16,6 @@ st.markdown("""
     .block-container {
         padding: 1rem 2rem;
     }
-    .button-row button {
-        background-color: white !important;
-        color: black !important;
-        border-radius: 8px;
-        padding: 10px 20px;
-        width: 180px;
-        font-weight: bold;
-    }
     .dataframe-container {
         background-color: white;
         padding: 10px;
@@ -74,47 +66,10 @@ start_date = pd.to_datetime(start_date)
 end_date = pd.to_datetime(end_date) + pd.Timedelta(days=1) - pd.Timedelta(microseconds=1)
 data_filtered = data.loc[start_date:end_date]
 
-# 📦 Model Comparison Buttons
-st.subheader("📊 Select Model Comparison")
-with st.container():
-    st.markdown("<div class='button-row'>", unsafe_allow_html=True)
-    cols = st.columns(6)
-    compare_mode = st.session_state.get("compare_mode", "All")
-    if cols[0].button("Actual vs LSTM"):
-        compare_mode = "Actual_LSTM"
-    if cols[1].button("Actual vs ARIMA"):
-        compare_mode = "Actual_ARIMA"
-    if cols[2].button("Actual vs BiLSTM"):
-        compare_mode = "Actual_BiLSTM"
-    if cols[3].button("Actual vs SARIMA"):
-        compare_mode = "Actual_SARIMA"
-    if cols[4].button("Actual vs Prophet"):
-        compare_mode = "Actual_Prophet"
-    if cols[5].button("All Models"):
-        compare_mode = "All"
-    st.markdown("</div>", unsafe_allow_html=True)
-
-st.session_state.compare_mode = compare_mode
-
-if compare_mode == "Actual_LSTM":
-    models_to_show = ["Actual", "LSTM"]
-elif compare_mode == "Actual_ARIMA":
-    models_to_show = ["Actual", "ARIMA"]
-elif compare_mode == "Actual_BiLSTM":
-    models_to_show = ["Actual", "BiLSTM"]
-elif compare_mode == "Actual_SARIMA":
-    models_to_show = ["Actual", "SARIMA"]
-elif compare_mode == "Actual_Prophet":
-    models_to_show = ["Actual", "Prophet"]
-else:
-    models_to_show = model_list
-
-data_filtered = data_filtered[data_filtered["Model"].isin(models_to_show)]
-
 # 🌟 Forecast Value Inspector with Submit
 st.sidebar.header("🌟 Forecast Value Inspector")
 with st.sidebar.form("forecast_form"):
-    model_selected = st.selectbox("Select Model", options=[m for m in model_list if m != "Actual"])
+    model_selected = st.select_slider("Select Model", options=[m for m in model_list if m != "Actual"])
     forecast_only = data[data["Model"] == model_selected]["Price"].dropna()
 
     forecast_date_input = st.slider(
@@ -134,6 +89,9 @@ if submitted and forecast_date in forecast_only.index:
     models_to_show = ["Actual", model_selected]
     data_filtered = data[data["Model"].isin(models_to_show)]
     data_filtered = data_filtered.loc[start_date:end_date]
+else:
+    models_to_show = model_list
+    data_filtered = data_filtered[data_filtered["Model"].isin(models_to_show)]
 
 # 📊 Altair Chart
 chart_data = data_filtered.reset_index().melt(
