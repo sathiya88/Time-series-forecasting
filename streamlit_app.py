@@ -193,7 +193,12 @@ if forecast_date and selected_price is not None:
     })).mark_circle(size=100, color='red').encode(
         x='Date:T',
         y='Value:Q',
-        tooltip=[alt.Tooltip('Date:T'), alt.Tooltip('Value:Q', title='Forecast Price')]
+       tooltip=[
+           alt.Tooltip('Date:T', title='📅 Date'),
+           alt.Tooltip('Value:Q', title='💲 Price'),
+           alt.Tooltip('Model:N', title='🔍 Model')
+]
+
     )
     chart += highlight_point
 
