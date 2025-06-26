@@ -59,8 +59,8 @@ data.dropna(subset=["Price"], inplace=True)
 data.set_index("Date", inplace=True)
 data.sort_index(inplace=True)
 
-# 📅 Date Filter
-st.sidebar.header("📅 Filter by Date")
+# 🗓 Date Filter
+st.sidebar.header("🗓 Filter by Date")
 min_date = data.index.min().date()
 max_date = data.index.max().date()
 start_date = st.sidebar.date_input("Start Date", min_value=min_date, max_value=max_date, value=min_date)
@@ -131,7 +131,8 @@ if not forecast_only.empty:
         selected_price = forecast_only.loc[forecast_date]
         st.sidebar.write(f"{model_selected} Forecast on {forecast_date.date()}: **${selected_price:.2f}**")
 
-# 📈 Chart Preparation
+# 📈 Altair Chart with unified tooltip
+
 df_chart = data_filtered.reset_index().melt(
     id_vars=["Date", "Model"],
     value_vars=["Price"],
@@ -139,41 +140,31 @@ df_chart = data_filtered.reset_index().melt(
     value_name="Value"
 ).dropna(subset=["Value"])
 
-# Nearest point selector
-nearest = alt.selection(type='single', nearest=True, on='mouseover', fields=['Date'], empty='none')
+nearest = alt.selection(type="single", on="mouseover", fields=["Date"], nearest=True, empty="none")
 
-# Base line chart
-line_chart = alt.Chart(df_chart).mark_line().encode(
-    x=alt.X('Date:T', title='Date'),
-    y=alt.Y('Value:Q', title='Price'),
-    color=alt.Color('Model:N', title='Model')
+line_chart = alt.Chart(df_chart).mark_line(interpolate='monotone').encode(
+    x=alt.X("Date:T", title="Date"),
+    y=alt.Y("Value:Q", title="Price"),
+    color=alt.Color("Model:N", title="Model")
 )
 
-# Invisible selectors
-selectors = alt.Chart(df_chart).mark_point().encode(
-    x='Date:T',
-    opacity=alt.value(0)
+selectors = alt.Chart(df_chart).mark_point(opacity=0).encode(
+    x="Date:T",
+    y="Value:Q",
 ).add_selection(nearest)
 
-# Hover points with tooltip in same container
-points = alt.Chart(df_chart).mark_circle(size=65).encode(
-    x='Date:T',
-    y='Value:Q',
-    color='Model:N',
+tooltips = alt.Chart(df_chart).mark_rule().encode(
+    x="Date:T",
+    y="Value:Q",
     tooltip=[
-        alt.Tooltip('Date:T', title='Date'),
-        alt.Tooltip('Value:Q', title='Price'),
-        alt.Tooltip('Model:N', title='Model')
-    ]
+        alt.Tooltip("Date:T", title="Date"),
+        alt.Tooltip("Value:Q", title="Price"),
+        alt.Tooltip("Model:N", title="Model")
+    ],
+    color=alt.Color("Model:N", legend=None)
 ).transform_filter(nearest)
 
-# Hover vertical rule
-rules = alt.Chart(df_chart).mark_rule(color='gray').encode(
-    x='Date:T'
-).transform_filter(nearest)
-
-# Combine all
-chart = (line_chart + selectors + points + rules).properties(
+chart = (line_chart + selectors + tooltips).properties(
     width=900,
     height=500,
     title="📈 Model Forecast Comparison (Hover to Inspect)",
@@ -197,7 +188,7 @@ if forecast_date and selected_price is not None:
     )
     chart += highlight_point
 
-# Display chart
+# Show chart
 st.altair_chart(chart, use_container_width=True)
 
 # 📋 Show Raw Data
