@@ -1,3 +1,4 @@
+%%writefile streamlit_app.py
 import streamlit as st
 import pandas as pd
 import altair as alt
@@ -30,6 +31,7 @@ if data.empty:
 data['Price'] = pd.to_numeric(data['Price'], errors='coerce')
 data.dropna(subset=["Price"], inplace=True)
 data.set_index("Date", inplace=True)
+data.sort_index(inplace=True)
 
 # Sidebar date filtering
 st.sidebar.header("📅 Filter by Date")
@@ -42,7 +44,11 @@ if start_date >= end_date:
     st.error("⚠️ End date must be after start date.")
     st.stop()
 
-data_filtered = data.loc[str(start_date):str(end_date)]
+# Convert to pandas datetime with time to ensure proper slicing
+start_date = pd.to_datetime(start_date)
+end_date = pd.to_datetime(end_date) + pd.Timedelta(days=1) - pd.Timedelta(microseconds=1)
+
+data_filtered = data.loc[start_date:end_date]
 
 # Sidebar: Forecast highlight per model
 st.sidebar.header("🎯 Forecast Value Inspector")
@@ -65,7 +71,7 @@ if not forecast_only.empty:
         selected_price = forecast_only.loc[forecast_date]
         st.sidebar.write(f"{model_selected} Forecast on {forecast_date.date()}: **${selected_price:.2f}**")
 
-# Prepare for Altair chart
+# Prepare data for Altair chart
 df_chart = data_filtered.reset_index().melt(
     id_vars=["Date", "Model"],
     value_vars=["Price"],
@@ -82,7 +88,7 @@ chart = alt.Chart(df_chart).mark_line().encode(
     title="Stock Price Forecasts by Model"
 ).interactive()
 
-# Add highlight point
+# Add highlight point for selected forecast date and price
 if forecast_date and selected_price is not None:
     highlight_point = alt.Chart(pd.DataFrame({
         'Date': [forecast_date],
