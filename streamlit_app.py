@@ -3,7 +3,7 @@ import pandas as pd
 import altair as alt
 import os
 
-# 💠 Page config and CSS styling
+# 🔠 Page config and CSS styling
 st.set_page_config(page_title="📈 Tesla Forecast Dashboard", layout="wide")
 st.markdown("""
     <style>
@@ -130,7 +130,7 @@ forecast_date = pd.to_datetime(forecast_date_input)
 selected_price = None
 if submitted and forecast_date in forecast_only.index:
     selected_price = forecast_only.loc[forecast_date]
-    st.sidebar.write(f"\ud83d\udccc {model_selected} Forecast on {forecast_date.date()}: **${selected_price:.2f}**")
+    st.sidebar.write(f"📌 {model_selected} Forecast on {forecast_date.date()}: **${selected_price:.2f}**")
     models_to_show = ["Actual", model_selected]
     data_filtered = data[data["Model"].isin(models_to_show)]
     data_filtered = data_filtered.loc[start_date:end_date]
@@ -177,7 +177,7 @@ rules = alt.Chart(chart_data).mark_rule(color='gray').encode(
 chart = (line_chart + selectors + points + rules + text).properties(
     width=900,
     height=500,
-    title="📊 Model Forecast Comparison",
+    title="📊 Model Forecast Comparison (Hover to Inspect)",
     background="#d0d3d4"
 ).interactive()
 
@@ -200,7 +200,7 @@ if submitted and selected_price is not None:
 # Show chart
 st.altair_chart(chart, use_container_width=True)
 
-# 📋 Raw Data Table
+# 📜 Raw Data Table
 if st.checkbox("Show raw data"):
     st.markdown("<div class='dataframe-container'>", unsafe_allow_html=True)
     st.dataframe(data_filtered.sort_index())
