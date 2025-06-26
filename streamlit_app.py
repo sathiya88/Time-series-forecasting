@@ -11,16 +11,30 @@ st.markdown("""
         background-color: #2e4053;
     }
     .main > div {
-        background-color: #2e4053;
-        padding: 2rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        background-color: #2e4053 !important;
     }
-    .legend-container {
-        background-color: #ecf0f1;
+    .block-container {
+        padding: 1rem 2rem;
+    }
+    .button-row button {
+        background-color: white !important;
+        color: black !important;
+        border-radius: 8px;
+        padding: 10px 20px;
+        width: 180px;
+        font-weight: bold;
+    }
+    .model-container {
+        background-color: white;
         padding: 10px 20px;
         border-radius: 10px;
-        margin-top: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+    }
+    .dataframe-container {
+        background-color: white;
+        padding: 10px;
+        border-radius: 10px;
         box-shadow: 0 1px 5px rgba(0,0,0,0.2);
     }
     </style>
@@ -70,21 +84,22 @@ data_filtered = data.loc[start_date:end_date]
 # 📦 Model Comparison Buttons
 st.subheader("📊 Select Model Comparison")
 with st.container():
-    col1, col2, col3 = st.columns(3)
+    st.markdown("<div class='button-row'>", unsafe_allow_html=True)
+    cols = st.columns(6)
     compare_mode = st.session_state.get("compare_mode", "All")
-
-    if col1.button("Actual vs LSTM"):
+    if cols[0].button("Actual vs LSTM"):
         compare_mode = "Actual_LSTM"
-    if col1.button("Actual vs ARIMA"):
+    if cols[1].button("Actual vs ARIMA"):
         compare_mode = "Actual_ARIMA"
-    if col2.button("Actual vs BiLSTM"):
+    if cols[2].button("Actual vs BiLSTM"):
         compare_mode = "Actual_BiLSTM"
-    if col2.button("Actual vs SARIMA"):
+    if cols[3].button("Actual vs SARIMA"):
         compare_mode = "Actual_SARIMA"
-    if col3.button("Actual vs Prophet"):
+    if cols[4].button("Actual vs Prophet"):
         compare_mode = "Actual_Prophet"
-    if col3.button("All Models"):
+    if cols[5].button("All Models"):
         compare_mode = "All"
+    st.markdown("</div>", unsafe_allow_html=True)
 
 st.session_state.compare_mode = compare_mode
 
@@ -102,6 +117,12 @@ else:
     models_to_show = model_list
 
 data_filtered = data_filtered[data_filtered["Model"].isin(models_to_show)]
+
+# 🧩 Model Container Display (instead of legend)
+with st.container():
+    st.markdown("<div class='model-container'>", unsafe_allow_html=True)
+    st.markdown(f"**Models Displayed:** {', '.join(models_to_show)}")
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # 🎯 Forecast Value Inspector
 st.sidebar.header("🎯 Forecast Value Inspector")
@@ -165,7 +186,8 @@ rules = alt.Chart(df_chart).mark_rule(color='gray').encode(
 chart = (line_chart + selectors + points + rules + text).properties(
     width=900,
     height=500,
-    title="📈 Model Forecast Comparison (Hover to Inspect)"
+    title="📈 Model Forecast Comparison (Hover to Inspect)",
+    background="#d0d3d4"
 ).interactive()
 
 # 🔴 Highlight selected forecast date
@@ -184,22 +206,8 @@ if forecast_date and selected_price is not None:
 # Display chart
 st.altair_chart(chart, use_container_width=True)
 
-# 📘 Legend in White Box
-with st.container():
-    st.markdown("""
-    <div class="legend-container">
-        <h4 style='color:#007BFF;'>📘 Legend</h4>
-        <ul>
-            <li><b>Actual</b> – Real Tesla stock prices</li>
-            <li><b>LSTM</b> – Long Short-Term Memory forecast</li>
-            <li><b>ARIMA</b> – Autoregressive Integrated Moving Average</li>
-            <li><b>BiLSTM</b> – Bidirectional LSTM forecast</li>
-            <li><b>SARIMA</b> – Seasonal ARIMA forecast</li>
-            <li><b>Prophet</b> – Meta’s Prophet model forecast</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
-
-# 📋 Show Raw Data
+# 📋 Show Raw Data (white container)
 with st.expander("📋 Show Raw Data"):
+    st.markdown("<div class='dataframe-container'>", unsafe_allow_html=True)
     st.dataframe(data_filtered.sort_index())
+    st.markdown("</div>", unsafe_allow_html=True)
