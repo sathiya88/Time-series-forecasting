@@ -3,10 +3,29 @@ import pandas as pd
 import altair as alt
 import os
 
+# 1. Page setup and background styling
 st.set_page_config(page_title="📈 Tesla Forecast Dashboard", layout="wide")
+
+st.markdown(
+    """
+    <style>
+    body {
+        background-color: #f4f6f9;
+    }
+    .main > div {
+        padding: 1.5rem;
+        background-color: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 st.title("🚗 Tesla Stock Price - 30 Days Forecast Comparison Dashboard")
 
-# Load data from multiple forecast models
+# 2. Load data
 def load_data(model_name):
     file_path = f"forecast_data/{model_name}_forecast.csv"
     if os.path.exists(file_path):
@@ -16,12 +35,10 @@ def load_data(model_name):
     else:
         return pd.DataFrame()
 
-# List of all models used
 model_list = ["Actual", "ARIMA", "SARIMA", "Prophet", "LSTM", "BiLSTM"]
 data_frames = [load_data(model) for model in model_list]
 data = pd.concat(data_frames, ignore_index=True)
 
-# Preprocessing
 if data.empty:
     st.error("No forecast data files found in 'forecast_data/' directory.")
     st.stop()
@@ -31,7 +48,7 @@ data.dropna(subset=["Price"], inplace=True)
 data.set_index("Date", inplace=True)
 data.sort_index(inplace=True)
 
-# Sidebar date filtering
+# 3. Sidebar date filter
 st.sidebar.header("📅 Filter by Date")
 min_date = data.index.min().date()
 max_date = data.index.max().date()
@@ -44,10 +61,38 @@ if start_date >= end_date:
 
 start_date = pd.to_datetime(start_date)
 end_date = pd.to_datetime(end_date) + pd.Timedelta(days=1) - pd.Timedelta(microseconds=1)
-
 data_filtered = data.loc[start_date:end_date]
 
-# Sidebar: Forecast value inspector
+# 4. Model comparison buttons
+st.subheader("📊 Model Comparison Controls")
+with st.container():
+    col1, col2, col3, col4 = st.columns(4)
+    compare_mode = "All"
+    with col1:
+        if st.button("Actual vs LSTM"):
+            compare_mode = "Actual_LSTM"
+    with col2:
+        if st.button("Actual vs ARIMA"):
+            compare_mode = "Actual_ARIMA"
+    with col3:
+        if st.button("ARIMA vs LSTM"):
+            compare_mode = "ARIMA_LSTM"
+    with col4:
+        if st.button("Show All Models"):
+            compare_mode = "All"
+
+if compare_mode == "Actual_LSTM":
+    models_to_show = ["Actual", "LSTM"]
+elif compare_mode == "Actual_ARIMA":
+    models_to_show = ["Actual", "ARIMA"]
+elif compare_mode == "ARIMA_LSTM":
+    models_to_show = ["ARIMA", "LSTM"]
+else:
+    models_to_show = model_list
+
+data_filtered = data_filtered[data_filtered["Model"].isin(models_to_show)]
+
+# 5. Forecast value inspector
 st.sidebar.header("🎯 Forecast Value Inspector")
 model_selected = st.sidebar.selectbox("Select Model", options=[m for m in model_list if m != "Actual"])
 forecast_only = data_filtered[data_filtered['Model'] == model_selected]
@@ -68,7 +113,7 @@ if not forecast_only.empty:
         selected_price = forecast_only.loc[forecast_date]
         st.sidebar.write(f"{model_selected} Forecast on {forecast_date.date()}: **${selected_price:.2f}**")
 
-# Prepare data for Altair chart
+# 6. Chart preparation
 df_chart = data_filtered.reset_index().melt(
     id_vars=["Date", "Model"],
     value_vars=["Price"],
@@ -76,7 +121,7 @@ df_chart = data_filtered.reset_index().melt(
     value_name="Value"
 ).dropna(subset=['Value'])
 
-# Create nearest selection for hover interaction
+# Hover interaction
 nearest = alt.selection(type='single', nearest=True, on='mouseover', fields=['Date'], empty='none')
 
 line_chart = alt.Chart(df_chart).mark_line().encode(
@@ -89,40 +134,32 @@ line_chart = alt.Chart(df_chart).mark_line().encode(
 selectors = alt.Chart(df_chart).mark_point().encode(
     x='Date:T',
     opacity=alt.value(0),
-).add_selection(
-    nearest
-)
+).add_selection(nearest)
 
 points = alt.Chart(df_chart).mark_circle(size=50).encode(
     x='Date:T',
     y='Value:Q',
     color='Model:N'
-).transform_filter(
-    nearest
-)
+).transform_filter(nearest)
 
 text = alt.Chart(df_chart).mark_text(align='left', dx=5, dy=-5).encode(
     x='Date:T',
     y='Value:Q',
     text=alt.Text('Value:Q', format=".2f"),
     color='Model:N'
-).transform_filter(
-    nearest
-)
+).transform_filter(nearest)
 
 rules = alt.Chart(df_chart).mark_rule(color='gray').encode(
     x='Date:T',
-).transform_filter(
-    nearest
-)
+).transform_filter(nearest)
 
 chart = (line_chart + selectors + points + rules + text).properties(
     width=900,
     height=500,
-    title="📊 Stock Price Forecasts by Model (Hover to Inspect)"
+    title="📈 Forecast Comparison (Hover to Inspect)"
 ).interactive()
 
-# Highlight point for selected model/date in red
+# Add highlight point if selected
 if forecast_date and selected_price is not None:
     highlight_point = alt.Chart(pd.DataFrame({
         'Date': [forecast_date],
@@ -135,8 +172,9 @@ if forecast_date and selected_price is not None:
     )
     chart += highlight_point
 
+# 7. Show chart
 st.altair_chart(chart, use_container_width=True)
 
-# Optional raw data table
-if st.checkbox("Show raw data"):
+# 8. Show data
+with st.expander("📋 Show Raw Data"):
     st.dataframe(data_filtered.sort_index())
