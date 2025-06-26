@@ -26,7 +26,6 @@ if data.empty:
     st.error("No forecast data files found in 'forecast_data/' directory.")
     st.stop()
 
-# Drop rows with missing prices and convert types
 data['Price'] = pd.to_numeric(data['Price'], errors='coerce')
 data.dropna(subset=["Price"], inplace=True)
 data.set_index("Date", inplace=True)
@@ -43,13 +42,12 @@ if start_date >= end_date:
     st.error("⚠️ End date must be after start date.")
     st.stop()
 
-# Convert to pandas datetime with time to ensure proper slicing
 start_date = pd.to_datetime(start_date)
 end_date = pd.to_datetime(end_date) + pd.Timedelta(days=1) - pd.Timedelta(microseconds=1)
 
 data_filtered = data.loc[start_date:end_date]
 
-# Sidebar: Forecast highlight per model
+# Sidebar: Forecast value inspector
 st.sidebar.header("🎯 Forecast Value Inspector")
 model_selected = st.sidebar.selectbox("Select Model", options=[m for m in model_list if m != "Actual"])
 forecast_only = data_filtered[data_filtered['Model'] == model_selected]
@@ -78,16 +76,53 @@ df_chart = data_filtered.reset_index().melt(
     value_name="Value"
 ).dropna(subset=['Value'])
 
-chart = alt.Chart(df_chart).mark_line().encode(
+# Create nearest selection for hover interaction
+nearest = alt.selection(type='single', nearest=True, on='mouseover', fields=['Date'], empty='none')
+
+line_chart = alt.Chart(df_chart).mark_line().encode(
     x=alt.X('Date:T', title='Date'),
     y=alt.Y('Value:Q', title='Price'),
     color=alt.Color('Model:N', title="Model"),
-    tooltip=['Date:T', alt.Tooltip('Value:Q', title='Price'), 'Model:N']
-).properties(
-    title="Stock Price Forecasts by Model"
+    tooltip=['Date:T', 'Model:N', alt.Tooltip('Value:Q', title='Price')]
+)
+
+selectors = alt.Chart(df_chart).mark_point().encode(
+    x='Date:T',
+    opacity=alt.value(0),
+).add_selection(
+    nearest
+)
+
+points = alt.Chart(df_chart).mark_circle(size=50).encode(
+    x='Date:T',
+    y='Value:Q',
+    color='Model:N'
+).transform_filter(
+    nearest
+)
+
+text = alt.Chart(df_chart).mark_text(align='left', dx=5, dy=-5).encode(
+    x='Date:T',
+    y='Value:Q',
+    text=alt.Text('Value:Q', format=".2f"),
+    color='Model:N'
+).transform_filter(
+    nearest
+)
+
+rules = alt.Chart(df_chart).mark_rule(color='gray').encode(
+    x='Date:T',
+).transform_filter(
+    nearest
+)
+
+chart = (line_chart + selectors + points + rules + text).properties(
+    width=900,
+    height=500,
+    title="📊 Stock Price Forecasts by Model (Hover to Inspect)"
 ).interactive()
 
-# Add highlight point for selected forecast date and price
+# Highlight point for selected model/date in red
 if forecast_date and selected_price is not None:
     highlight_point = alt.Chart(pd.DataFrame({
         'Date': [forecast_date],
