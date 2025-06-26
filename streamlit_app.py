@@ -120,9 +120,12 @@ data_filtered = data_filtered[data_filtered["Model"].isin(models_to_show)]
 
 # 🧩 Model Container Display (instead of legend)
 with st.container():
-    st.markdown("<div class='model-container'>", unsafe_allow_html=True)
-    st.markdown(f"**Models Displayed:** {', '.join(models_to_show)}")
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("""
+    <div class='model-container'>
+        <h3 style='color:#2e4053; font-size:26px;'>🧩 Models Displayed</h3>
+        <p style='font-size:20px; font-weight:bold;'>""" + ", ".join(models_to_show) + """</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 # 🎯 Forecast Value Inspector
 st.sidebar.header("🎯 Forecast Value Inspector")
