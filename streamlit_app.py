@@ -158,7 +158,8 @@ line_chart = alt.Chart(df_chart).mark_line().encode(
     x=alt.X('Date:T', title='Date'),
     y=alt.Y('Value:Q', title='Price'),
     color=alt.Color('Model:N', title='Model'),
-    tooltip=[alt.Tooltip('Date:T'), alt.Tooltip('Model:N'), alt.Tooltip('Value:Q', title='Price')]
+    tooltip=[alt.Tooltip('Date:T', title='Date'), alt.Tooltip('Value:Q', title='Price'), alt.Tooltip('Model:N', title='Model')]
+
 )
 
 selectors = alt.Chart(df_chart).mark_point().encode(
