@@ -3,7 +3,7 @@ import pandas as pd
 import altair as alt
 import os
 
-# 🔠 Page config and CSS styling
+# 💠 Page config and CSS styling
 st.set_page_config(page_title="📈 Tesla Forecast Dashboard", layout="wide")
 st.markdown("""
     <style>
@@ -16,6 +16,14 @@ st.markdown("""
     .block-container {
         padding: 1rem 2rem;
     }
+    .button-row button {
+        background-color: white !important;
+        color: black !important;
+        border-radius: 8px;
+        padding: 10px 20px;
+        width: 180px;
+        font-weight: bold;
+    }
     .dataframe-container {
         background-color: white;
         padding: 10px;
@@ -26,7 +34,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 🚗 Title
-st.title(":red_car: Tesla Stock Price - 30 Days Forecast Comparison Dashboard")
+st.title("🚗 Tesla Stock Price - 30 Days Forecast Comparison Dashboard")
 
 # Load forecast data
 def load_data(model_name):
@@ -51,8 +59,8 @@ data.dropna(subset=["Price"], inplace=True)
 data.set_index("Date", inplace=True)
 data.sort_index(inplace=True)
 
-# 🗓️ Date Filter
-st.sidebar.header("🗓️ Filter by Date")
+# 🗓 Date Filter
+st.sidebar.header("🗓 Filter by Date")
 min_date = data.index.min().date()
 max_date = data.index.max().date()
 start_date = st.sidebar.date_input("Start Date", min_value=min_date, max_value=max_date, value=min_date)
@@ -66,91 +74,116 @@ start_date = pd.to_datetime(start_date)
 end_date = pd.to_datetime(end_date) + pd.Timedelta(days=1) - pd.Timedelta(microseconds=1)
 data_filtered = data.loc[start_date:end_date]
 
-# 🌟 Forecast Value Inspector with Submit
-st.sidebar.header("🌟 Forecast Value Inspector")
-with st.sidebar.form("forecast_form"):
-    model_selected = st.select_slider("Select Model", options=[m for m in model_list if m != "Actual"])
-    forecast_only = data[data["Model"] == model_selected]["Price"].dropna()
+# 📦 Model Comparison Buttons
+st.subheader("📊 Select Model Comparison")
+with st.container():
+    st.markdown("<div class='button-row'>", unsafe_allow_html=True)
+    cols = st.columns(6)
+    compare_mode = st.session_state.get("compare_mode", "All")
+    if cols[0].button("Actual vs LSTM"):
+        compare_mode = "Actual_LSTM"
+    if cols[1].button("Actual vs ARIMA"):
+        compare_mode = "Actual_ARIMA"
+    if cols[2].button("Actual vs BiLSTM"):
+        compare_mode = "Actual_BiLSTM"
+    if cols[3].button("Actual vs SARIMA"):
+        compare_mode = "Actual_SARIMA"
+    if cols[4].button("Actual vs Prophet"):
+        compare_mode = "Actual_Prophet"
+    if cols[5].button("All Models"):
+        compare_mode = "All"
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    forecast_date_input = st.slider(
-        "Select Forecast Date",
-        min_value=forecast_only.index.min().date() if not forecast_only.empty else min_date,
-        max_value=forecast_only.index.max().date() if not forecast_only.empty else max_date,
-        value=forecast_only.index.min().date() if not forecast_only.empty else min_date,
-        format="YYYY-MM-DD"
-    )
-    submitted = st.form_submit_button("Submit")
+st.session_state.compare_mode = compare_mode
 
-forecast_date = pd.to_datetime(forecast_date_input)
-selected_price = None
-if submitted and forecast_date in forecast_only.index:
-    selected_price = forecast_only.loc[forecast_date]
-    st.sidebar.write(f"📌 {model_selected} Forecast on {forecast_date.date()}: **${selected_price:.2f}**")
-    models_to_show = ["Actual", model_selected]
-    data_filtered = data[data["Model"].isin(models_to_show)]
-    data_filtered = data_filtered.loc[start_date:end_date]
+if compare_mode == "Actual_LSTM":
+    models_to_show = ["Actual", "LSTM"]
+elif compare_mode == "Actual_ARIMA":
+    models_to_show = ["Actual", "ARIMA"]
+elif compare_mode == "Actual_BiLSTM":
+    models_to_show = ["Actual", "BiLSTM"]
+elif compare_mode == "Actual_SARIMA":
+    models_to_show = ["Actual", "SARIMA"]
+elif compare_mode == "Actual_Prophet":
+    models_to_show = ["Actual", "Prophet"]
 else:
     models_to_show = model_list
-    data_filtered = data_filtered[data_filtered["Model"].isin(models_to_show)]
 
-# 📊 Altair Chart
-chart_data = data_filtered.reset_index().melt(
+data_filtered = data_filtered[data_filtered["Model"].isin(models_to_show)]
+
+# 🎯 Forecast Value Inspector
+st.sidebar.header("🎯 Forecast Value Inspector")
+model_selected = st.sidebar.selectbox("Select Model", options=[m for m in model_list if m != "Actual"])
+forecast_only = data_filtered[data_filtered["Model"] == model_selected]["Price"].dropna()
+
+forecast_date = None
+selected_price = None
+if not forecast_only.empty:
+    forecast_date_input = st.sidebar.slider(
+        "Select Forecast Date",
+        min_value=forecast_only.index.min().date(),
+        max_value=forecast_only.index.max().date(),
+        value=forecast_only.index.min().date(),
+        format="YYYY-MM-DD"
+    )
+    forecast_date = pd.to_datetime(forecast_date_input)
+    if forecast_date in forecast_only.index:
+        selected_price = forecast_only.loc[forecast_date]
+        st.sidebar.write(f"{model_selected} Forecast on {forecast_date.date()}: **${selected_price:.2f}**")
+
+# 📈 Altair Chart with unified tooltip
+
+df_chart = data_filtered.reset_index().melt(
     id_vars=["Date", "Model"],
     value_vars=["Price"],
     var_name="ValueType",
     value_name="Value"
 ).dropna(subset=["Value"])
 
-nearest = alt.selection(type='single', nearest=True, on='mouseover', fields=['Date'], empty='none')
+nearest = alt.selection(type="single", on="mouseover", fields=["Date"], nearest=True, empty="none")
 
-line_chart = alt.Chart(chart_data).mark_line().encode(
-    x=alt.X('Date:T', title='Date'),
-    y=alt.Y('Value:Q', title='Price'),
-    color=alt.Color('Model:N', title='Model'),
-    tooltip=['Date:T', 'Model:N', alt.Tooltip('Value:Q', title='Price')]
+line_chart = alt.Chart(df_chart).mark_line(interpolate='monotone').encode(
+    x=alt.X("Date:T", title="Date"),
+    y=alt.Y("Value:Q", title="Price"),
+    color=alt.Color("Model:N", title="Model")
 )
 
-selectors = alt.Chart(chart_data).mark_point().encode(
-    x='Date:T',
-    opacity=alt.value(0),
+selectors = alt.Chart(df_chart).mark_point(opacity=0).encode(
+    x="Date:T",
+    y="Value:Q",
 ).add_selection(nearest)
 
-points = alt.Chart(chart_data).mark_circle(size=50).encode(
-    x='Date:T',
-    y='Value:Q',
-    color='Model:N'
+tooltips = alt.Chart(df_chart).mark_rule().encode(
+    x="Date:T",
+    y="Value:Q",
+    tooltip=[
+        alt.Tooltip("Date:T", title="Date"),
+        alt.Tooltip("Value:Q", title="Price"),
+        alt.Tooltip("Model:N", title="Model")
+    ],
+    color=alt.Color("Model:N", legend=None)
 ).transform_filter(nearest)
 
-text = alt.Chart(chart_data).mark_text(align='left', dx=5, dy=-5).encode(
-    x='Date:T',
-    y='Value:Q',
-    text=alt.Text('Value:Q', format=".2f"),
-    color='Model:N'
-).transform_filter(nearest)
-
-rules = alt.Chart(chart_data).mark_rule(color='gray').encode(
-    x='Date:T'
-).transform_filter(nearest)
-
-chart = (line_chart + selectors + points + rules + text).properties(
+chart = (line_chart + selectors + tooltips).properties(
     width=900,
     height=500,
-    title="📊 Model Forecast Comparison (Hover to Inspect)",
+    title="📈 Model Forecast Comparison (Hover to Inspect)",
     background="#d0d3d4"
 ).interactive()
 
-# ⚫ Highlight forecast point if submitted
-if submitted and selected_price is not None:
+# 🔴 Highlight selected forecast date
+if forecast_date and selected_price is not None:
     highlight_point = alt.Chart(pd.DataFrame({
         'Date': [forecast_date],
         'Value': [selected_price],
         'Model': [model_selected]
-    })).mark_circle(size=120, color='red').encode(
+    })).mark_circle(size=100, color='red').encode(
         x='Date:T',
         y='Value:Q',
         tooltip=[
-            alt.Tooltip('Date:T', title='Forecast Date'),
-            alt.Tooltip('Value:Q', title='Forecast Price')
+            alt.Tooltip('Date:T', title='Date'),
+            alt.Tooltip('Value:Q', title='Forecast Price'),
+            alt.Tooltip('Model:N', title='Model')
         ]
     )
     chart += highlight_point
@@ -158,8 +191,8 @@ if submitted and selected_price is not None:
 # Show chart
 st.altair_chart(chart, use_container_width=True)
 
-# 📜 Raw Data Table
-if st.checkbox("Show raw data"):
+# 📋 Show Raw Data
+with st.expander("📋 Show Raw Data"):
     st.markdown("<div class='dataframe-container'>", unsafe_allow_html=True)
     st.dataframe(data_filtered.sort_index())
     st.markdown("</div>", unsafe_allow_html=True)
