@@ -3,7 +3,7 @@ import pandas as pd
 import altair as alt
 import os
 
-# 🔠 Page config and CSS styling
+# 💠 Page config and CSS styling
 st.set_page_config(page_title="📈 Tesla Forecast Dashboard", layout="wide")
 st.markdown("""
     <style>
@@ -28,16 +28,6 @@ st.markdown("""
         background-color: white;
         padding: 10px;
         border-radius: 10px;
-        box-shadow: 0 1px 5px rgba(0,0,0,0.2);
-    }
-    .model-display-box {
-        background-color: white;
-        padding: 10px;
-        margin-top: 10px;
-        margin-bottom: 10px;
-        border-radius: 10px;
-        font-size: 18px;
-        font-weight: bold;
         box-shadow: 0 1px 5px rgba(0,0,0,0.2);
     }
     </style>
@@ -141,10 +131,7 @@ if not forecast_only.empty:
         selected_price = forecast_only.loc[forecast_date]
         st.sidebar.write(f"{model_selected} Forecast on {forecast_date.date()}: **${selected_price:.2f}**")
 
-    if model_selected not in models_to_show:
-        st.sidebar.warning(f"'{model_selected}' is not currently shown on the plot. Select a matching comparison mode.")
-
-# 📈 Altair Chart
+# 📈 Chart Preparation
 df_chart = data_filtered.reset_index().melt(
     id_vars=["Date", "Model"],
     value_vars=["Price"],
@@ -152,39 +139,41 @@ df_chart = data_filtered.reset_index().melt(
     value_name="Value"
 ).dropna(subset=["Value"])
 
+# Nearest point selector
 nearest = alt.selection(type='single', nearest=True, on='mouseover', fields=['Date'], empty='none')
 
+# Base line chart
 line_chart = alt.Chart(df_chart).mark_line().encode(
     x=alt.X('Date:T', title='Date'),
     y=alt.Y('Value:Q', title='Price'),
-    color=alt.Color('Model:N', title='Model'),
-    tooltip=[alt.Tooltip('Date:T', title='Date'), alt.Tooltip('Value:Q', title='Price'), alt.Tooltip('Model:N', title='Model')]
-
+    color=alt.Color('Model:N', title='Model')
 )
 
+# Invisible selectors
 selectors = alt.Chart(df_chart).mark_point().encode(
     x='Date:T',
-    opacity=alt.value(0),
+    opacity=alt.value(0)
 ).add_selection(nearest)
 
-points = alt.Chart(df_chart).mark_circle(size=50).encode(
+# Hover points with tooltip in same container
+points = alt.Chart(df_chart).mark_circle(size=65).encode(
     x='Date:T',
     y='Value:Q',
-    color='Model:N'
+    color='Model:N',
+    tooltip=[
+        alt.Tooltip('Date:T', title='Date'),
+        alt.Tooltip('Value:Q', title='Price'),
+        alt.Tooltip('Model:N', title='Model')
+    ]
 ).transform_filter(nearest)
 
-text = alt.Chart(df_chart).mark_text(align='left', dx=5, dy=-5).encode(
-    x='Date:T',
-    y='Value:Q',
-    text=alt.Text('Value:Q', format=".2f"),
-    color='Model:N'
-).transform_filter(nearest)
-
+# Hover vertical rule
 rules = alt.Chart(df_chart).mark_rule(color='gray').encode(
     x='Date:T'
 ).transform_filter(nearest)
 
-chart = (line_chart + selectors + points + rules + text).properties(
+# Combine all
+chart = (line_chart + selectors + points + rules).properties(
     width=900,
     height=500,
     title="📈 Model Forecast Comparison (Hover to Inspect)",
@@ -200,16 +189,19 @@ if forecast_date and selected_price is not None:
     })).mark_circle(size=100, color='red').encode(
         x='Date:T',
         y='Value:Q',
-        tooltip=[alt.Tooltip('Date:T'), alt.Tooltip('Model:N'), alt.Tooltip('Value:Q', title='Forecast Price')]
+        tooltip=[
+            alt.Tooltip('Date:T', title='Date'),
+            alt.Tooltip('Value:Q', title='Forecast Price'),
+            alt.Tooltip('Model:N', title='Model')
+        ]
     )
     chart += highlight_point
 
 # Display chart
 st.altair_chart(chart, use_container_width=True)
 
-# 📋 Show Raw Data (white container with model display)
+# 📋 Show Raw Data
 with st.expander("📋 Show Raw Data"):
-    st.markdown(f"<div class='model-display-box'>🧰 Models Displayed: {', '.join(models_to_show)}</div>", unsafe_allow_html=True)
     st.markdown("<div class='dataframe-container'>", unsafe_allow_html=True)
     st.dataframe(data_filtered.sort_index())
     st.markdown("</div>", unsafe_allow_html=True)
