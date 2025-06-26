@@ -11,13 +11,13 @@ st.markdown("""
         background-color: #34495e;
     }
     .main > div {
-        background-color: #ffffff;
+        background-color: #34495e;
         padding: 2rem;
         border-radius: 10px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
     .legend-container {
-        background-color: white;
+        background-color: #ecf0f1;
         padding: 10px 20px;
         border-radius: 10px;
         margin-top: 20px;
