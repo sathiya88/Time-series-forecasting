@@ -24,13 +24,6 @@ st.markdown("""
         width: 180px;
         font-weight: bold;
     }
-    .model-container {
-        background-color: white;
-        padding: 10px 20px;
-        border-radius: 10px;
-        margin-bottom: 15px;
-        box-shadow: 0 1px 5px rgba(0,0,0,0.2);
-    }
     .dataframe-container {
         background-color: white;
         padding: 10px;
@@ -151,8 +144,7 @@ nearest = alt.selection(type='single', nearest=True, on='mouseover', fields=['Da
 line_chart = alt.Chart(df_chart).mark_line().encode(
     x=alt.X('Date:T', title='Date'),
     y=alt.Y('Value:Q', title='Price'),
-    color=alt.Color('Model:N', title='Model'),
-    tooltip=['Date:T', 'Model:N', alt.Tooltip('Value:Q', title='Price')]
+    color=alt.Color('Model:N', title='Model')
 )
 
 selectors = alt.Chart(df_chart).mark_point().encode(
@@ -177,12 +169,21 @@ rules = alt.Chart(df_chart).mark_rule(color='gray').encode(
     x='Date:T'
 ).transform_filter(nearest)
 
-chart = (line_chart + selectors + points + rules + text).properties(
+tooltip_chart = alt.Chart(df_chart).mark_rule().encode(
+    x='Date:T',
+    tooltip=[
+        alt.Tooltip('Date:T', title='📅 Date'),
+        alt.Tooltip('Model:N', title='🔍 Model'),
+        alt.Tooltip('Value:Q', title='💲 Price')
+    ]
+).add_selection(nearest)
+
+chart = (line_chart + selectors + points + rules + text + tooltip_chart).properties(
     width=900,
     height=500,
     title="📈 Model Forecast Comparison (Hover to Inspect)",
     background="#d0d3d4"
-).interactive()
+)
 
 # 🔴 Highlight selected forecast date
 if forecast_date and selected_price is not None:
@@ -193,29 +194,19 @@ if forecast_date and selected_price is not None:
     })).mark_circle(size=100, color='red').encode(
         x='Date:T',
         y='Value:Q',
-       tooltip=[
-           alt.Tooltip('Date:T', title='📅 Date'),
-           alt.Tooltip('Value:Q', title='💲 Price'),
-           alt.Tooltip('Model:N', title='🔍 Model')
-]
-
+        tooltip=[alt.Tooltip('Date:T'), alt.Tooltip('Value:Q', title='Forecast Price')]
     )
     chart += highlight_point
 
 # Display chart
 st.altair_chart(chart, use_container_width=True)
 
-# 📋 Show Raw Data (white container with models shown)
+# 📋 Show Raw Data (with models shown above it)
 with st.expander("📋 Show Raw Data"):
-    st.markdown("<div class='dataframe-container'>", unsafe_allow_html=True)
-
-    # 🧩 Models Displayed Section
-    st.markdown("""
-    <div class='model-container'>
-        <h3 style='color:#2e4053; font-size:26px;'>🧩 Models Displayed</h3>
-        <p style='font-size:20px; font-weight:bold;'>""" + ", ".join(models_to_show) + """</p>
-    </div>
+    st.markdown(f"""
+        <div class='dataframe-container'>
+            <h3 style='color:#2e4053; font-size:22px;'>🧩 Models Displayed</h3>
+            <p style='font-size:18px; font-weight:bold;'>{", ".join(models_to_show)}</p>
     """, unsafe_allow_html=True)
-
     st.dataframe(data_filtered.sort_index())
     st.markdown("</div>", unsafe_allow_html=True)
