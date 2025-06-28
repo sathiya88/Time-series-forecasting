@@ -1,70 +1,102 @@
+
 # 📈 Tesla Stock Price Forecasting Dashboard
-Unlock the future of Tesla stock prices with this dynamic forecasting dashboard! Leveraging a blend of classic statistical models and cutting-edge deep learning, this tool empowers users to explore, compare, and analyze multiple forecasting approaches—all within a sleek, interactive interface.
 
-**🔍 What Makes This Project Unique?
-Diverse Forecasting Arsenal:** Combines traditional models (ARIMA, SARIMA, Prophet) with powerful neural networks (LSTM, Bidirectional LSTM) for a comprehensive perspective.
+Unlock the future of Tesla stock prices with this dynamic forecasting dashboard! Combining classic statistical models and advanced deep learning techniques, this tool empowers users to explore, compare, and analyze multiple forecasting approaches—all within a modern, interactive interface.
 
-**Tailored Comparison Modes:** Instantly toggle between all models or focused pairwise comparisons, such as Actual vs. LSTM, to zero in on performance differences.
+---
 
-**Interactive Visuals with Meaningful Colors:** Each model is distinctly color-coded with a clean legend positioned outside the chart, ensuring clarity and ease of interpretation.
+## 🔍 What Makes This Project Unique?
 
-**Real-Time Date Filtering:** Choose your date range on-the-fly and watch forecasts adjust seamlessly, enabling temporal deep dives.
+### ✅ Diverse Forecasting Arsenal  
+Blends traditional models like **ARIMA**, **SARIMA**, and **Prophet** with powerful deep learning models like **LSTM** and **Bidirectional LSTM**, offering a well-rounded perspective on time series forecasting.
 
-**Data Transparency:** Expand raw forecast tables to inspect the numbers behind the graphs, fostering trust and deeper insights.
+### 🔄 Tailored Comparison Modes  
+Easily switch between:
+- **All Models View**
+- Focused pairwise comparisons (e.g., **Actual vs. LSTM**, **Actual vs. ARIMA**)  
+Perfect for performance benchmarking.
 
-**Stylish Dark-Themed UI:** Professional aesthetics paired with intuitive layout for a smooth user experience.
+### 🎨 Interactive Visuals with Clear Legends  
+- Each model is **color-coded** for quick identification  
+- **Legend placed outside the chart** for better readability  
+- Responsive **Altair charts** allow intuitive exploration
 
-**🛠 Tech Stack**
-Python 3.7+ with:
+### 📅 Real-Time Date Filtering  
+Instantly filter forecasts by date range to perform **temporal analysis** and detect model performance trends over time.
 
-Streamlit — lightning-fast web app deployment
+### 🔢 Transparent Forecast Data  
+A toggleable section provides access to **raw forecast tables**, allowing users to inspect the exact predictions behind the visuals.
 
-yfinance — effortless stock data retrieval
+### 🌙 Professional UI  
+Built with a **sleek dark theme** and minimalist layout to ensure a clean, user-friendly experience.
 
-pandas & numpy — powerful data wrangling
+---
 
-Altair — elegant, interactive charting
+## 🛠 Tech Stack
 
-statsmodels & Prophet — robust statistical forecasting
+| Tool               | Purpose                                 |
+|--------------------|------------------------------------------|
+| Python 3.7+        | Core programming language                |
+| Streamlit          | Web-based dashboard framework            |
+| yfinance           | Tesla stock data retrieval               |
+| pandas, numpy      | Data manipulation and preprocessing      |
+| Altair             | Interactive data visualization           |
+| statsmodels        | ARIMA, SARIMA implementations            |
+| Prophet (Meta)     | Forecasting with trend and seasonality   |
+| TensorFlow/Keras   | Deep learning models (LSTM, BiLSTM)      |
 
-TensorFlow/Keras — advanced deep learning models
+---
 
-**🎯 How to Use**
-**Clone this repository:**
+## 🎯 How to Use
 
+### 🔹 Clone the Repository
+```bash
 git clone https://github.com/your-username/tesla-stock-forecasting.git
 cd tesla-stock-forecasting
-**Install required libraries:**
+```
 
-bash
-Copy
-Edit
+### 🔹 Install Required Libraries
+```bash
 pip install -r requirements.txt
-**Launch the app:**
+```
 
-bash
-Copy
-Edit
+### 🔹 Launch the Dashboard
+```bash
 streamlit run streamlit_app.py
-**Explore the dashboard:**
+```
 
-Use sidebar controls to filter by date and select models for comparison.
+### 🔹 Interact with the App
+- Use the **sidebar** to filter by date or model
+- **Hover over the chart** for data tooltips
+- Expand **"Show Raw Data"** to see actual forecast values
 
-Hover over charts to inspect detailed data points.
+---
 
-Expand the raw data section to see exact forecast values.
+## 🌐 Live Demo
 
-**🌐 Live Demo**
-Try it now — no setup required:
-https://timeseries-8tadzglttnvakkfwxujcgj.streamlit.app/
+Try the app instantly without installation:  
+🔗 [Streamlit Cloud App](https://timeseries-8tadzglttnvakkfwxujcgj.streamlit.app/)
 
-**🗂 Project Layout**
-bash
-Copy
-Edit
-forecast_data/            # CSV files with actual and forecasted data
-streamlit_app.py          # Main dashboard app
-requirements.txt          # Dependency list
-README.md                 # Project documentation
-🤝 Contributions & Feedback
-This project thrives on collaboration! Open an issue or send a pull request to share your ideas or improvements.
+---
+
+## 🗂 Project Structure
+
+```
+tesla-stock-forecasting/
+├── forecast_data/         # CSV files with actual & predicted prices
+├── streamlit_app.py       # Main Streamlit dashboard
+├── generate_forecast_data.py # Script to simulate and save forecasts
+├── requirements.txt       # Required Python libraries
+└── README.md              # Project documentation (this file)
+```
+
+---
+
+## 🤝 Contributions & Feedback
+
+This project thrives on collaboration!  
+- Open an issue for bugs or feature requests  
+- Submit a pull request to improve code or UI  
+- Share your suggestions to help make this dashboard even better
+
+---
