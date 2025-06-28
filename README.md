@@ -1,4 +1,4 @@
-🚀 Tesla Stock Price Forecasting Dashboard
+📈 Tesla Stock Price Forecasting Dashboard
 Unlock the future of Tesla stock prices with this dynamic forecasting dashboard! Leveraging a blend of classic statistical models and cutting-edge deep learning, this tool empowers users to explore, compare, and analyze multiple forecasting approaches—all within a sleek, interactive interface.
 
 🔍 What Makes This Project Unique?
