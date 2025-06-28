@@ -102,7 +102,7 @@ color_mapping = {
     "LSTM": "#2ecc71",
     "BiLSTM": "#f1c40f"
 }
-models_to_color = {model: color_mapping.get(model, "#888888") for model in models_to_show}
+models_to_color = {model: color_mapping.get(model,"#d0d3d4") for model in models_to_show}
 
 nearest = alt.selection(type='single', nearest=True, on='mouseover', fields=['Date'], empty='none')
 
@@ -142,7 +142,7 @@ tooltips = alt.Chart(chart_data).mark_rule().encode(
 ).transform_filter(nearest)
 
 chart = (line_chart + selectors + tooltips).properties(
-    title="📊 Model Forecast Comparison (Hover to Inspect)",
+    title="📊 Model Forecast Comparison",
     background="#d0d3d4"
 ).interactive()
 
