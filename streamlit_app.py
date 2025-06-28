@@ -66,7 +66,7 @@ start_date = pd.to_datetime(start_date)
 end_date = pd.to_datetime(end_date) + pd.Timedelta(days=1) - pd.Timedelta(microseconds=1)
 data = data.loc[start_date:end_date]
 
-# 🎛️ Select comparison models using radio buttons
+# Model comparison options
 comparison_mode = st.sidebar.radio("Compare Models", options=[
     "All Models", "Actual vs LSTM", "Actual vs ARIMA", "Actual vs BiLSTM", "Actual vs SARIMA", "Actual vs Prophet"])
 
@@ -93,16 +93,16 @@ chart_data = data_filtered.reset_index().melt(
     value_name="Value"
 ).dropna(subset=["Value"])
 
-# 🎨 Color configuration
+# Custom color mapping
 color_mapping = {
-    "Actual": "#e74c3c",     # Red
-    "LSTM": "#8e44ad",       # Purple
-    "BiLSTM": "#17becf",     # Cyan
-    "Prophet": "#ff7f0e",    # Orange
-    "ARIMA": "#1f77b4",      # Blue
-    "SARIMA": "#2ca02c"      # Green
+    "Actual": "#ffffff",
+    "ARIMA": "#ff5733",
+    "SARIMA": "#33c3ff",
+    "Prophet": "#9b59b6",
+    "LSTM": "#2ecc71",
+    "BiLSTM": "#f1c40f"
 }
-models_to_color = [m for m in models_to_show if m in color_mapping]
+models_to_color = {model: color_mapping.get(model, "#888888") for model in models_to_show}
 
 nearest = alt.selection(type='single', nearest=True, on='mouseover', fields=['Date'], empty='none')
 
@@ -111,15 +111,18 @@ line_chart = alt.Chart(chart_data).mark_line(interpolate='monotone', strokeWidth
     y=alt.Y("Value:Q", title="Price"),
     color=alt.Color(
         "Model:N",
-        scale=alt.Scale(domain=models_to_color, range=[color_mapping[m] for m in models_to_color]),
+        scale=alt.Scale(domain=list(models_to_color.keys()), range=list(models_to_color.values())),
         legend=alt.Legend(
             title="Model",
+            orient="right",
             labelFontSize=13,
             titleFontSize=14,
-            symbolSize=100,
-            orient="top-right"
+            symbolSize=100
         )
     )
+).properties(
+    width=750,
+    height=500
 )
 
 selectors = alt.Chart(chart_data).mark_point(opacity=0).encode(
@@ -139,8 +142,6 @@ tooltips = alt.Chart(chart_data).mark_rule().encode(
 ).transform_filter(nearest)
 
 chart = (line_chart + selectors + tooltips).properties(
-    width=900,
-    height=500,
     title="📊 Model Forecast Comparison (Hover to Inspect)",
     background="#d0d3d4"
 ).interactive()
