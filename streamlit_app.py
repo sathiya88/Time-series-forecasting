@@ -66,7 +66,7 @@ start_date = pd.to_datetime(start_date)
 end_date = pd.to_datetime(end_date) + pd.Timedelta(days=1) - pd.Timedelta(microseconds=1)
 data = data.loc[start_date:end_date]
 
-# Select comparison models using radio buttons
+# 🎛️ Select comparison models using radio buttons
 comparison_mode = st.sidebar.radio("Compare Models", options=[
     "All Models", "Actual vs LSTM", "Actual vs ARIMA", "Actual vs BiLSTM", "Actual vs SARIMA", "Actual vs Prophet"])
 
@@ -93,12 +93,33 @@ chart_data = data_filtered.reset_index().melt(
     value_name="Value"
 ).dropna(subset=["Value"])
 
+# 🎨 Color configuration
+color_mapping = {
+    "Actual": "#e74c3c",     # Red
+    "LSTM": "#8e44ad",       # Purple
+    "BiLSTM": "#17becf",     # Cyan
+    "Prophet": "#ff7f0e",    # Orange
+    "ARIMA": "#1f77b4",      # Blue
+    "SARIMA": "#2ca02c"      # Green
+}
+models_to_color = [m for m in models_to_show if m in color_mapping]
+
 nearest = alt.selection(type='single', nearest=True, on='mouseover', fields=['Date'], empty='none')
 
-line_chart = alt.Chart(chart_data).mark_line(interpolate='monotone').encode(
+line_chart = alt.Chart(chart_data).mark_line(interpolate='monotone', strokeWidth=2).encode(
     x=alt.X("Date:T", title="Date"),
     y=alt.Y("Value:Q", title="Price"),
-    color=alt.Color("Model:N", title="Model")
+    color=alt.Color(
+        "Model:N",
+        scale=alt.Scale(domain=models_to_color, range=[color_mapping[m] for m in models_to_color]),
+        legend=alt.Legend(
+            title="Model",
+            labelFontSize=13,
+            titleFontSize=14,
+            symbolSize=100,
+            orient="top-right"
+        )
+    )
 )
 
 selectors = alt.Chart(chart_data).mark_point(opacity=0).encode(
@@ -118,7 +139,6 @@ tooltips = alt.Chart(chart_data).mark_rule().encode(
 ).transform_filter(nearest)
 
 chart = (line_chart + selectors + tooltips).properties(
-
     width=900,
     height=500,
     title="📊 Model Forecast Comparison (Hover to Inspect)",
