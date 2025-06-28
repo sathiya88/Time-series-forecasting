@@ -95,18 +95,18 @@ chart_data = data_filtered.reset_index().melt(
 
 nearest = alt.selection(type='single', nearest=True, on='mouseover', fields=['Date'], empty='none')
 
-line_chart = alt.Chart(df_chart).mark_line(interpolate='monotone').encode(
+line_chart = alt.Chart(chart_data).mark_line(interpolate='monotone').encode(
     x=alt.X("Date:T", title="Date"),
     y=alt.Y("Value:Q", title="Price"),
     color=alt.Color("Model:N", title="Model")
 )
 
-selectors = alt.Chart(df_chart).mark_point(opacity=0).encode(
+selectors = alt.Chart(chart_data).mark_point(opacity=0).encode(
     x="Date:T",
     y="Value:Q",
 ).add_selection(nearest)
 
-tooltips = alt.Chart(df_chart).mark_rule().encode(
+tooltips = alt.Chart(chart_data).mark_rule().encode(
     x="Date:T",
     y="Value:Q",
     tooltip=[
