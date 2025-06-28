@@ -95,36 +95,30 @@ chart_data = data_filtered.reset_index().melt(
 
 nearest = alt.selection(type='single', nearest=True, on='mouseover', fields=['Date'], empty='none')
 
-line_chart = alt.Chart(chart_data).mark_line().encode(
-    x=alt.X('Date:T', title='Date'),
-    y=alt.Y('Value:Q', title='Price'),
-    color=alt.Color('Model:N', title='Model'),
-    tooltip=['Date:T', 'Model:N', alt.Tooltip('Value:Q', title='Price')]
+line_chart = alt.Chart(df_chart).mark_line(interpolate='monotone').encode(
+    x=alt.X("Date:T", title="Date"),
+    y=alt.Y("Value:Q", title="Price"),
+    color=alt.Color("Model:N", title="Model")
 )
 
-selectors = alt.Chart(chart_data).mark_point().encode(
-    x='Date:T',
-    opacity=alt.value(0),
+selectors = alt.Chart(df_chart).mark_point(opacity=0).encode(
+    x="Date:T",
+    y="Value:Q",
 ).add_selection(nearest)
 
-points = alt.Chart(chart_data).mark_circle(size=50).encode(
-    x='Date:T',
-    y='Value:Q',
-    color='Model:N'
+tooltips = alt.Chart(df_chart).mark_rule().encode(
+    x="Date:T",
+    y="Value:Q",
+    tooltip=[
+        alt.Tooltip("Date:T", title="Date"),
+        alt.Tooltip("Value:Q", title="Price"),
+        alt.Tooltip("Model:N", title="Model")
+    ],
+    color=alt.Color("Model:N", legend=None)
 ).transform_filter(nearest)
 
-text = alt.Chart(chart_data).mark_text(align='left', dx=5, dy=-5).encode(
-    x='Date:T',
-    y='Value:Q',
-    text=alt.Text('Value:Q', format=".2f"),
-    color='Model:N'
-).transform_filter(nearest)
+chart = (line_chart + selectors + tooltips).properties(
 
-rules = alt.Chart(chart_data).mark_rule(color='gray').encode(
-    x='Date:T'
-).transform_filter(nearest)
-
-chart = (line_chart + selectors + points + rules + text).properties(
     width=900,
     height=500,
     title="📊 Model Forecast Comparison (Hover to Inspect)",
